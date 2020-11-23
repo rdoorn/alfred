@@ -3,17 +3,18 @@ package zwave
 import "log"
 
 type Controller struct {
-	debug      bool
-	device     Device     // the device supporting io
-	transport  Transport  // reads the device, and cuts it in to requests
-	translator Translator // translates the requests to messages
-	session    Session    // work at session level, handle retries and timeouts
+	debug     bool
+	device    Device    // the device supporting io
+	transport Transport // reads the device, and cuts it in to requests
+	//translator Translator // translates the requests to messages
+	session Session // work at session level, handle retries and timeouts
 }
 
 func New(opts ...Option) (*Controller, error) {
 	c := &Controller{
 		device:    NewSerial("/dev/tty.usbmodem14101", 115200),
 		transport: NewZwaveAPI(),
+		//translator: NewTranslator(),
 		//session:   NewZwaveSession(nil),
 	}
 
@@ -45,6 +46,7 @@ func New(opts ...Option) (*Controller, error) {
 
 	go c.transport.Reader()
 	go c.transport.Writer()
+	go c.session.Reader()
 
 	return c, nil
 
@@ -55,5 +57,8 @@ func (c *Controller) Shutdown() {
 }
 
 func (c *Controller) DiscoverNodes() {
-	c.session.Write(MessageRequest(DiscoveryNodes))
+	//c.session.WriteFunction(DiscoveryNodes)
+	c.session.Write(SOF(REQ, DiscoveryNodes))
+	//	c.session.Write(NewMessage(Request, DiscoveryNodes))
+
 }

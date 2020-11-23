@@ -7,30 +7,27 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/rdoorn/alfred/pkg/zwave"
+	"github.com/rdoorn/alfred/pkg/alfred"
 )
 
 var port string
 
 func main() {
-
-	zw, err := zwave.New(
-	//zwave.WithDevice(zwave.NewSerial("/dev/tty.usbmodem14101", 115200)),
-	)
+	handler, err := alfred.New()
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Failed to initialize, %s", err)
+		os.Exit(1)
 	}
 
-	zw.DiscoverNodes()
-
 	// in test always quit after 10 seconds
-	timer := time.NewTimer(10 * time.Second)
+	timer := time.NewTimer(60 * time.Second)
 
 	// wait for sigint or sigterm for cleanup - note that sigterm cannot be caught
 	sigterm := make(chan os.Signal, 10)
 	signal.Notify(sigterm, os.Interrupt, syscall.SIGTERM)
 
-	log.Printf("zwave handler start")
+	log.Printf("handler: %+v", handler)
+	log.Printf("Alfred is listening...")
 	for {
 		select {
 		case <-timer.C:
@@ -38,10 +35,41 @@ func main() {
 			os.Exit(1)
 		case <-sigterm:
 			log.Fatal("sigterm received")
-			zw.Shutdown()
-			os.Exit(1)
+			handler.Shutdown()
 		}
 	}
+
+	/*
+		zw, err := zwave.New(
+		//zwave.WithDevice(zwave.NewSerial("/dev/tty.usbmodem14101", 115200)),
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		zw.DiscoverNodes()
+
+		// in test always quit after 10 seconds
+		timer := time.NewTimer(60 * time.Second)
+
+		// wait for sigint or sigterm for cleanup - note that sigterm cannot be caught
+		sigterm := make(chan os.Signal, 10)
+		signal.Notify(sigterm, os.Interrupt, syscall.SIGTERM)
+
+		log.Printf("zwave handler start")
+		for {
+			select {
+			case <-timer.C:
+				log.Fatal("timer expired")
+				os.Exit(1)
+			case <-sigterm:
+				log.Fatal("sigterm received")
+				zw.Shutdown()
+				os.Exit(1)
+			}
+
+		}
+	*/
 
 	/*
 		c := &serial.Config{Name: "/dev/tty.usbmodem14101", Baud: 115200}
@@ -52,7 +80,7 @@ func main() {
 		log.Printf("%T", s)
 
 		time.Sleep(1 * time.Second)
-		msg := zwave.NewRequest(0x02)
+		msg := zwave.NewMessage(0x00, 0x02)
 		log.Printf("writing: %q", msg.Message())
 		os.Exit(1)
 		b := serialapi.NewRaw(msg.Message())

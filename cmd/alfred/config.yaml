@@ -1,0 +1,9 @@
+devices:
+  zwave:
+  - device: /dev/tty.usbmodem14101
+    baudrate: 115200
+
+listeners:
+  http:
+    listener: 127.0.0.1
+    port: 8000
